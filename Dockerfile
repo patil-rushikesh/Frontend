@@ -1,24 +1,26 @@
-# Stage 1: Build the Vite app
+# Stage 1: Build static assets
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-ENV NODE_ENV=development
 
-# Install dependencies first for better layer caching
-COPY package*.json ./
-RUN npm install --include=dev
+# Use Corepack to get a pinned pnpm from lockfile metadata.
+RUN corepack enable
 
-# Copy source and build
+# Copy dependency manifests first for better layer cache reuse.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy source and create production build.
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
+# Stage 2: Serve build with Nginx
+FROM nginx:1.27-alpine
 
-# Copy Nginx config (configured for Cloud Run on port 8080 + SPA routing)
+# Replace default site config with Cloud Run + SPA-friendly config.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built static files
+# Copy built static files from builder.
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 8080
