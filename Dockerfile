@@ -1,23 +1,25 @@
-FROM node:20-alpine
-
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-
-RUN corepack enable
+# Stage 1: Build the Vite app
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy monorepo files from root context
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Install dependencies first for better layer caching
+COPY package*.json ./
+RUN npm install
 
-# Copy frontend package and source
+# Copy source and build
 COPY . .
+RUN npm run build
 
-# Install dependencies using the monorepo workspace
-RUN pnpm install --frozen-lockfile --ignore-scripts
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-WORKDIR /app
+# Copy Nginx config (configured for Cloud Run on port 8080 + SPA routing)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 5173
+# Copy built static files
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-CMD ["pnpm", "dev"]
+EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off;"]
