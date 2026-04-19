@@ -686,7 +686,7 @@ export const CustomerDashboard = () => {
                       </div>
 
                       <div className="mt-5 flex flex-wrap gap-3">
-                        {['CREATED', 'PAYMENT_FAILED'].includes(order.status) ? (
+                        {['CREATED', 'PAYMENT_PENDING', 'PAYMENT_FAILED'].includes(order.status) ? (
                           <Button
                             onClick={() => void handlePayment(order)}
                             disabled={isPayingOrderId === order.id}
