@@ -20,4 +20,4 @@ WORKDIR /app
 
 EXPOSE 5173
 
-CMD ["pnpm", "dev", "--host", "0.0.0.0"]
+CMD ["pnpm", "dev"]
