@@ -25,4 +25,14 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+# Generate env-config.js using Cloud Run runtime variables, then start Nginx
+CMD ["/bin/sh", "-c", "\
+    echo 'window._env_ = {' > /usr/share/nginx/html/env-config.js && \
+    echo \"  VITE_API_BASE_URL: '${VITE_API_BASE_URL}',\" >> /usr/share/nginx/html/env-config.js && \
+    echo \"  VITE_BACKEND_BASE_URL: '${VITE_BACKEND_BASE_URL}',\" >> /usr/share/nginx/html/env-config.js && \
+    echo \"  VITE_PAYMENT_MODE: '${VITE_PAYMENT_MODE}',\" >> /usr/share/nginx/html/env-config.js && \
+    echo \"  VITE_RAZORPAY_KEY_ID: '${VITE_RAZORPAY_KEY_ID}',\" >> /usr/share/nginx/html/env-config.js && \
+    echo \"  VITE_ENABLE_QA_TOOLS: '${VITE_ENABLE_QA_TOOLS}'\" >> /usr/share/nginx/html/env-config.js && \
+    echo '};' >> /usr/share/nginx/html/env-config.js && \
+    nginx -g 'daemon off;' \
+"]
